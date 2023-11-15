@@ -1,12 +1,12 @@
 import cv2
 import os
 import numpy as np
-from skimage.feature import hog, greycomatrix
+from skimage.feature import hog
+from skimage.feature.texture import greycomatrix
 from skimage import exposure
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score, classification_report
 
 # Função para extrair características usando HOG
 def extrair_caracteristicas_hog(imagem):
@@ -19,8 +19,9 @@ def extrair_caracteristicas_glcm(imagem):
     glcm = greycomatrix(imagem, [5], [0], 256, symmetric=True, normed=True)
     return np.array([np.mean(glcm), np.std(glcm)])
 
+
 # Diretório contendo as imagens
-diretorio_imagens = "caminho/do/seu/diretorio"
+diretorio_imagens = r"C:\Users\Matheus Miquelini\Desktop\projeto\imagens"
 
 # Inicialize listas para armazenar imagens e rótulos
 imagens = []
@@ -48,6 +49,7 @@ rotulos = np.array(rotulos)
 X_treino, X_teste, y_treino, y_teste = train_test_split(imagens, rotulos, test_size=0.2, random_state=42)
 
 # Inicializar e treinar o modelo SVM usando HOG
+print("Inicializar e treinar o modelo SVM usando HOG")
 X_treino_hog = np.array([extrair_caracteristicas_hog(imagem) for imagem in X_treino])
 X_teste_hog = np.array([extrair_caracteristicas_hog(imagem) for imagem in X_teste])
 
@@ -57,6 +59,7 @@ y_pred_hog = modelo_hog.predict(X_teste_hog)
 precisao_hog = accuracy_score(y_teste, y_pred_hog)
 
 # Inicializar e treinar o modelo SVM usando GLCM
+print("# Inicializar e treinar o modelo SVM usando GLCM")
 X_treino_glcm = np.array([extrair_caracteristicas_glcm(imagem) for imagem in X_treino])
 X_teste_glcm = np.array([extrair_caracteristicas_glcm(imagem) for imagem in X_teste])
 
@@ -75,16 +78,22 @@ relatorio_glcm = classification_report(y_teste, y_pred_glcm)
 print("\nMétricas para o Modelo GLCM:")
 print(relatorio_glcm)
 
-########################
-
 # Limiar de decisão
 limiar_decision = 0.8
 
 # Ajuste das previsões para aumentar falsos negativos e diminuir falsos positivos para o modelo HOG
-y_pred_hog_adjusted = (modelo_hog.predict_proba(X_teste_hog)[:, 1] > limiar_decision).astype(int)
+y_score_hog = modelo_hog.decision_function(X_teste_hog)
+y_pred_hog_adjusted = (y_score_hog > limiar_decision).astype(int)
 
 # Ajuste das previsões para aumentar falsos negativos e diminuir falsos positivos para o modelo GLCM
-y_pred_glcm_adjusted = (modelo_glcm.predict_proba(X_teste_glcm)[:, 1] > limiar_decision).astype(int)
+y_score_glcm = modelo_glcm.decision_function(X_teste_glcm)
+y_pred_glcm_adjusted = (y_score_glcm > limiar_decision).astype(int)
+
+print("\nPontuações de Decisão para o Modelo HOG:")
+print(y_score_hog)
+
+print("\nPontuações de Decisão para o Modelo GLCM:")
+print(y_score_glcm)
 
 # Calcular métricas para os modelos ajustados
 relatorio_hog_adjusted = classification_report(y_teste, y_pred_hog_adjusted)
