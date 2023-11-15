@@ -5,6 +5,7 @@ from skimage.feature import graycomatrix
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
+from imblearn.under_sampling import RandomUnderSampler
 
 # Função para extrair características usando GLCM
 def extrair_caracteristicas_glcm(imagem):
@@ -39,15 +40,23 @@ rotulos = np.array(rotulos)
 # Dividir o conjunto de dados em treinamento e teste
 X_treino, X_teste, y_treino, y_teste = train_test_split(imagens, rotulos, test_size=0.2, random_state=42)
 
-# Inicializar e treinar o modelo SVM usando GLCM
-print("# Inicializar e treinar o modelo SVM usando GLCM")
-X_treino_glcm = np.array([extrair_caracteristicas_glcm(imagem) for imagem in X_treino])
-X_teste_glcm = np.array([extrair_caracteristicas_glcm(imagem) for imagem in X_teste])
+# Aplicar subamostragem para balancear as classes
+rus = RandomUnderSampler(sampling_strategy='majority', random_state=42)
+X_resampled, y_resampled = rus.fit_resample(X_treino.reshape((X_treino.shape[0], -1)), y_treino)
 
-modelo_glcm = SVC(kernel='linear', C=1, class_weight='balanced')
-modelo_glcm.fit(X_treino_glcm, y_treino)
+# Redimensionar os dados após a subamostragem
+X_resampled_glcm = X_resampled.reshape((X_resampled.shape[0], *X_treino.shape[1:]))
+
+print(f"X_resampled_glcm shape: {X_resampled_glcm.shape}")
+print(f"y_resampled shape: {y_resampled.shape}")
+
+# Inicializar e treinar o modelo SVM usando GLCM com dados subamostrados
+modelo_glcm = SVC(kernel='linear', C=1, class_weight='balanced', random_state=42)
+modelo_glcm.fit(X_resampled_glcm.reshape((X_resampled_glcm.shape[0], -1)), y_resampled)
+
+# Realizar previsões no conjunto de teste
+X_teste_glcm = X_teste.reshape((X_teste.shape[0], -1))
 y_pred_glcm = modelo_glcm.predict(X_teste_glcm)
-precisao_glcm = accuracy_score(y_teste, y_pred_glcm)
 
 # Calcular métricas para o modelo GLCM
 relatorio_glcm = classification_report(y_teste, y_pred_glcm)

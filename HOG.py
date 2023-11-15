@@ -46,6 +46,9 @@ print("Inicializar e treinar o modelo SVM usando HOG")
 X_treino_hog = np.array([extrair_caracteristicas_hog(imagem) for imagem in X_treino])
 X_teste_hog = np.array([extrair_caracteristicas_hog(imagem) for imagem in X_teste])
 
+print(f"X_treino_hog shape: {X_treino_hog.shape}")
+print(f"X_teste_hog shape: {X_teste_hog.shape}")
+
 modelo_hog = SVC(kernel='linear', C=1)
 modelo_hog.fit(X_treino_hog, y_treino)
 y_pred_hog = modelo_hog.predict(X_teste_hog)
@@ -63,7 +66,7 @@ limiar_decision = 0.8
 y_score_hog = modelo_hog.decision_function(X_teste_hog)
 y_pred_hog_adjusted = (y_score_hog > limiar_decision).astype(int)
 
-print("\nPontuações de Decisão para o Modelo HOG:")
+print("Pontuações de Decisão para o Modelo HOG:")
 print(y_score_hog)
 
 # Calcular métricas para o modelo HOG ajustado
